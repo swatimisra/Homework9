@@ -1,0 +1,152 @@
+---
+title: "Homework 9"
+author: "Swati Misra (SM83264)"
+date: "2024-04-16"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(MatchIt)
+library(mosaic)
+library(effectsize)
+```
+
+
+```{r, echo = FALSE}
+turnout <- read.csv("turnout.csv")
+solder <- read.csv("solder.csv")
+```
+
+
+Link to GitHub Repo: https://github.com/swatimisra/Homework9
+# Question 1
+
+## Part A
+
+```{r, echo = FALSE, results = 'hide' }
+
+gotv_only <- turnout[turnout$GOTV_call == 1, ]
+
+sum_GOTV <- sum(gotv_only$GOTV_call == 1)
+sum_1998 <- sum(gotv_only$voted1998 == 1)
+prop_1998 <- sum_1998/sum_GOTV
+prop_1998
+
+```
+
+The proportion of those receiving a GOTV call who voted in 1998 is 0.648. 
+
+```{r, echo = FALSE, results = 'hide'}
+no_gotv <- turnout[turnout$GOTV_call == 0, ]
+sum_noGOTV <- sum(no_gotv$GOTV_call == 0)
+sum_19982 <- sum(no_gotv$voted1998 == 1)
+prop_19982 <- sum_19982/sum_noGOTV
+prop_19982
+```
+
+The proportion of those not receiving a GOTV call who voted in 1998 is 0.444. 
+
+```{r, echo = FALSE, results = 'hide'}
+prop(voted1998 ~ GOTV_call, data=turnout,success=1)
+prop.test(voted1998 ~ GOTV_call, data = turnout, success = 1)
+```
+
+This tells us that the 95% confidence interval for the difference in voting in 1998 was somewhere between -0.266 and -0.141. The p value is 3.122e-10, which is very small and indicates that the difference is statistically significant at the commonly accepted level. 
+
+## Part B
+
+```{r, echo = FALSE}
+mean(voted1996~ GOTV_call, data=turnout)
+mean(AGE~ GOTV_call, data=turnout)
+mean(MAJORPTY~ GOTV_call, data=turnout)
+```
+
+As we can see in the above calculated statistics, these confounders are very unbalanced when related with the GOTV_calls. This shows that these variables are confounders that prevent the observed difference from representing the true causal effect of the GOTV call on the likelihood that a person voted in 1998. 
+
+## Part C
+
+```{r, echo = FALSE, results = 'hide'}
+turnout_matched = matchit(GOTV_call ~ voted1996 + AGE + MAJORPTY,
+                                 data = turnout, ratio=5) %>%
+  match.data
+
+#check balance
+
+mean(voted1996 ~ GOTV_call, data=turnout_matched)
+mean(AGE ~ GOTV_call, data=turnout_matched)
+mean(MAJORPTY ~ GOTV_call, data=turnout_matched)
+
+
+prop(voted1998 ~ GOTV_call, data=turnout_matched,success=1)
+prop.test(voted1998 ~ GOTV_call, data = turnout_matched, success = 1)
+
+```
+
+```{r, echo = FALSE}
+mean(voted1996 ~ GOTV_call, data=turnout_matched)
+mean(AGE ~ GOTV_call, data=turnout_matched)
+mean(MAJORPTY ~ GOTV_call, data=turnout_matched)
+```
+
+As we can see, the matched data set is now balanced with respect to the confounders. 
+
+
+The proportion of those receiving a GOTV call who voted in 1998 is 0.6478. The proportion of those not receiving a GOTV call who voted in 1998 is 0.5741. The 95% confidence interval for the different in these two proportions is -0.142 to -0.006.
+
+This means there is a statistically significant effect of the GOTV call on the likelihood of voting in the 1998 election because the interval does not include 0.
+
+# Question 2
+
+## Part A
+```{r, echo = FALSE}
+
+ggplot(solder) + 
+  geom_boxplot(aes(x=Opening, y=skips))
+
+```
+This plot shows evidence that the size of the opening on the solder gun is related to the number of skips.
+
+```{r, echo = FALSE}
+ggplot(solder) + 
+  geom_boxplot(aes(x=Solder, y=skips))
+```
+
+
+This plot shows evidence that the thickness of the alloy used for soldering is related to the number of skips. 
+
+## Part B
+
+```{r, echo = FALSE, results = 'hide'}
+solder_model = lm(skips ~ Opening + Solder + Opening:Solder, data=solder)
+coef(solder_model) %>%
+  round(2)
+
+confint(solder_model, level = 0.95) %>% round(2)
+```
+
+| Variable            | Coefficient | 95% Confidence Interval |
+|---------------------|-------------|-------------------------|
+| Intercept           | .39         | (-0.63,1.41)            |
+| OpeningM            | 2.41        | (0.96,3.85)             |
+| OpeningS            | 5.13        | (3.68, 6.57)            |
+| SolderThin          | 2.28        | (0.84,3.72              |
+| OpeningM:SolderThin | -0.74       | (-2.78,1.30)            |
+| OpeningS:SolderThin | 9.65        | (7.61, 11.70)           |
+
+## Part C
+
+The baseline number of skips for when the opening size is at standard size and the solder metal thickness is at standard thickness is 0.39 skips. The main effect of the OpeningM variable is 2.41 skips. The main effect of the OpeningS variable is 5.13 skips. The main effect of the SolderThin variable is 2.28 skips. These are all effects of the variables in isolation.The interaction effect for Opening and Solder is -0.74 skips for OpeningM:SolderThin and 9.65 for OpeningS:SolderThin. 
+
+
+## Part D
+
+I would recommend using the Opening size small and Solder thickness Thin to AT&T base don the analysis. This is because this variable has the biggest effect on the number of skips and would minimize the number of skips in the manufacturing process. 
+
+
+
+
+
